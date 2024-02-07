@@ -4,7 +4,7 @@ import math
 import sys
 
 #Extraction des données depuis le fichier test
-N,M,K,p,P,R = extraction(5)
+N,M,K,p,P,R = extraction(1)
 
 #On introduit les booléens x_k,m,n
 X = np.array([[[0 for m in range(M)] for k in range(K)] for n in range(N)])
@@ -67,30 +67,49 @@ def preprocessing(ind):
     #print(sum(len(ind[n]) for n in range(N)))
 
 preprocessing(indices_liste)
+print(indices_liste)
 
 def greedy(ind):
     """Applique l'algorithme glouton de la question 6"""
     N = len(ind)
-    e = [sys.float_info.max for n in range(N)]
+    e = []
     l = [0 for n in range(N)]
     budget_restant = p
-    while max(e) > 0:
+
+    #Phase d'initialisation
+    for n in range(N):
+        if len(ind[n]) == 0:
+            return "pas de solution"
+        elif len(ind[n]) == 1:
+            e.append(0)
+        else :
+            e.append((R[n, ind[n][1][0], ind[n][1][1]] - R[n, ind[n][0][0], ind[n][0][1]])/(P[n, ind[n][1][0], ind[n][1][1]] - P[n, ind[n][0][0], ind[n][0][1]]))
+        budget_restant -= P[n, ind[n][0][0], ind[n][0][1]]
+        X[n, ind[n][0][0], ind[n][0][1]] = 1
+    
+    while budget_restant > 0 and max(e) > 0: #On vérifie qu'il reste du budget, et que l'on peut encore avancer
         n = e.index(max(e))
         i = l[n]
-        if i >= len(ind[n]):
-            e[n] = 0
+        delta_P = P[n, ind[n][i+1][0], ind[n][i+1][1]] - P[n, ind[n][i][0], ind[n][i][1]]
+        #delta_R = R[n, ind[n][i+1][0], ind[n][i+1][1]] - R[n, ind[n][i][0], ind[n][i][1]]
+        if  delta_P > budget_restant : 
+            #On a deux x qui sont fractionnaires dans ce cas
+            X[n, ind[n][i+1][0], ind[n][i+1][1]] = (budget_restant - P[n, ind[n][i][0], ind[n][i][1]])/delta_P
+            X[n, ind[n][i][0], ind[n][i][1]] -= X[n, ind[n][i+1][0], ind[n][i+1][1]] #Somme = 1
+            budget_restant = 0
         else :
-            if P[n, ind[n][i][0], ind[n][i][1]] > budget_restant :
-                # peut etre pb ligne suivante si i = 0
-                X[n, ind[n][i][0], ind[n][i][1]] = budget_restant /(P[n, ind[n][i][0], ind[n][i][1]] - P[n, ind[n][i-1][0], ind[n][i-1][1]])
-                budget_restant = 0
-                return X
-            else :
-                budget_restant -= P[n, ind[n][i][0], ind[n][i][1]] - P[n, ind[n][i-1][0], ind[n][i-1][1]]
-                e[n] = (R[n, ind[n][i+1][0], ind[n][i+1][1]] - R[n, ind[n][i][0], ind[n][i][1]]) / (P[n, ind[n][i+1][0], ind[n][i+1][1]] - P[n, ind[n][i][0], ind[n][i][1]])
+            X[n, ind[n][i][0], ind[n][i][1]] = 0
+            X[n, ind[n][i+1][0], ind[n][i+1][1]] = 1
+            l[n] = i+1
+            budget_restant -= delta_P
+            if i == len(ind[n]) - 2:
+                e[n] = 0 #On est arrivé au bout de la liste des indices possibles pour la fréquence n
+            else : 
+                e[n] = (R[n, ind[n][i+2][0], ind[n][i+2][1]] - R[n, ind[n][i+1][0], ind[n][i+1][1]])/(P[n, ind[n][i+2][0], ind[n][i+2][1]] - P[n, ind[n][i+1][0], ind[n][i+1][1]])
+    #on renvoie le tableau des x 
+    return X
 
-                l[n] = i + 1
-
+print(greedy(indices_liste))
 
 
 
