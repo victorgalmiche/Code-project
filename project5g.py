@@ -4,10 +4,10 @@ import math
 import sys
 
 #Extraction des données depuis le fichier test
-N,M,K,p,P,R = extraction(1)
+N,M,K,p,P,R = extraction(5)
 
 #On introduit les booléens x_k,m,n
-X = np.array([[[0 for m in range(M)] for k in range(K)] for n in range(N)])
+X = np.array([[[0. for m in range(M)] for k in range(K)] for n in range(N)])
 
 #On introduit la liste des indices possibles pour chaque n 
 indices_liste = []
@@ -64,10 +64,10 @@ def preprocessing(ind):
     removeIPdominated(ind)
     #print(sum(len(ind[n]) for n in range(N)))
     removeLPdominated(ind)
+    print(ind)
     #print(sum(len(ind[n]) for n in range(N)))
 
 preprocessing(indices_liste)
-print(indices_liste)
 
 def greedy(ind):
     """Applique l'algorithme glouton de la question 6"""
@@ -81,25 +81,27 @@ def greedy(ind):
         if len(ind[n]) == 0:
             return "pas de solution"
         elif len(ind[n]) == 1:
-            e.append(0)
+            e.append(0.)
         else :
             e.append((R[n, ind[n][1][0], ind[n][1][1]] - R[n, ind[n][0][0], ind[n][0][1]])/(P[n, ind[n][1][0], ind[n][1][1]] - P[n, ind[n][0][0], ind[n][0][1]]))
         budget_restant -= P[n, ind[n][0][0], ind[n][0][1]]
-        X[n, ind[n][0][0], ind[n][0][1]] = 1
+        X[n, ind[n][0][0], ind[n][0][1]] = 1.
+    
+    if budget_restant < 0 :
+        return "pas de solution"
     
     while budget_restant > 0 and max(e) > 0: #On vérifie qu'il reste du budget, et que l'on peut encore avancer
         n = e.index(max(e))
         i = l[n]
         delta_P = P[n, ind[n][i+1][0], ind[n][i+1][1]] - P[n, ind[n][i][0], ind[n][i][1]]
-        #delta_R = R[n, ind[n][i+1][0], ind[n][i+1][1]] - R[n, ind[n][i][0], ind[n][i][1]]
         if  delta_P > budget_restant : 
             #On a deux x qui sont fractionnaires dans ce cas
-            X[n, ind[n][i+1][0], ind[n][i+1][1]] = (budget_restant - P[n, ind[n][i][0], ind[n][i][1]])/delta_P
-            X[n, ind[n][i][0], ind[n][i][1]] -= X[n, ind[n][i+1][0], ind[n][i+1][1]] #Somme = 1
+            X[n, ind[n][i+1][0], ind[n][i+1][1]] = budget_restant/delta_P
+            X[n, ind[n][i][0], ind[n][i][1]] = 1- X[n, ind[n][i+1][0], ind[n][i+1][1]] #Somme = 1
             budget_restant = 0
         else :
-            X[n, ind[n][i][0], ind[n][i][1]] = 0
-            X[n, ind[n][i+1][0], ind[n][i+1][1]] = 1
+            X[n, ind[n][i][0], ind[n][i][1]] = 0.
+            X[n, ind[n][i+1][0], ind[n][i+1][1]] = 1.
             l[n] = i+1
             budget_restant -= delta_P
             if i == len(ind[n]) - 2:
@@ -109,7 +111,12 @@ def greedy(ind):
     #on renvoie le tableau des x 
     return X
 
-print(greedy(indices_liste))
+X = greedy(indices_liste)
+
+print(p)
+
+print(np.sum(R*X))
+print(np.sum(P*X))
 
 
 
